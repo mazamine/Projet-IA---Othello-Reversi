@@ -19,7 +19,13 @@ class Tournament:
             'total_discs': {ai1.name: 0, ai2.name: 0}
         }
 
+        print(f"Match {ai1.name} vs {ai2.name}:")
         for i in range(num_games):
+            # Afficher la barre de progression
+            progress = int((i + 1) / num_games * 50)  # 50 caractères pour la barre
+            bar = f"[{'#' * progress}{'.' * (50 - progress)}] {i + 1}/{num_games}\n"
+            print(f"\r{bar}", end='')
+
             game = OthelloGame()
             # Détermine qui joue Noir (B) ou Blanc (W)
             if i % 2 == 0:
@@ -57,6 +63,7 @@ class Tournament:
             stats['total_discs'][players['B'].name] += b_score
             stats['total_discs'][players['W'].name] += w_score
 
+        print()  # Nouvelle ligne après la barre de progression
         record = {
             'matchup': f"{ai1.name} vs {ai2.name}",
             'stats': stats,
