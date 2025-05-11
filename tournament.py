@@ -1,0 +1,110 @@
+# othello_tournament.py — Gère les affrontements entre IA et affiche les résultats
+
+import random
+from othello_game import OthelloGame
+from ai_strategies import EasyAI, MediumAI, HardAI
+
+class Tournament:
+    """Organise les matchs entre IA et collecte les statistiques."""
+    def __init__(self):
+        self.results = []
+
+    def run_match(self, ai1, ai2, num_games: int = 50):
+        """Joue `num_games` parties entre `ai1` et `ai2`, en alternant les couleurs."""
+        stats = {
+            ai1.name: 0,
+            ai2.name: 0,
+            'draws': 0,
+            'disc_diff': {ai1.name: 0, ai2.name: 0},
+            'total_discs': {ai1.name: 0, ai2.name: 0}
+        }
+
+        for i in range(num_games):
+            game = OthelloGame()
+            # Détermine qui joue Noir (B) ou Blanc (W)
+            if i % 2 == 0:
+                players = {'B': ai1, 'W': ai2}
+            else:
+                players = {'B': ai2, 'W': ai1}
+            for color, ai in players.items():
+                ai.player = color
+                ai.opponent = 'W' if color == 'B' else 'B'
+
+            # Déroulement de la partie
+            while not game.game_over:
+                current = players[game.current_player]
+                move = current.get_move(game)
+                if move is None:
+                    # Passage de tour
+                    game.current_player = game.get_opponent()
+                    if not game.get_valid_moves():
+                        game.check_game_state()
+                    continue
+                game.place_disc(*move)
+
+            # Bilan de la partie
+            b_score, w_score = game.get_score()
+            # Mise à jour victoire / nul
+            if game.winner:
+                stats[players[game.winner].name] += 1
+            else:
+                stats['draws'] += 1
+            # Différence de disques
+            diff = b_score - w_score
+            stats['disc_diff'][players['B'].name] += diff
+            stats['disc_diff'][players['W'].name] -= diff
+            # Total de disques pour moyenne
+            stats['total_discs'][players['B'].name] += b_score
+            stats['total_discs'][players['W'].name] += w_score
+
+        record = {
+            'matchup': f"{ai1.name} vs {ai2.name}",
+            'stats': stats,
+            'num_games': num_games
+        }
+        self.results.append(record)
+        return record
+
+    def full_tournament(self, num_games: int = 50):
+        """Lance le tournoi Easy vs Medium vs Hard et affiche un résumé clair."""
+        ais = [EasyAI('B'), MediumAI('B'), HardAI('B')]
+        print("\n=== Tournoi Othello IA ===")
+        print(f"Parties par affrontement : {num_games}\n")
+
+        for i in range(len(ais)):
+            for j in range(i + 1, len(ais)):
+                ai1, ai2 = ais[i], ais[j]
+                print(f"--- {ai1.name} vs {ai2.name} ---")
+                rec = self.run_match(ai1, ai2, num_games)
+                s = rec['stats']
+                ng = rec['num_games']
+
+                # Victoires / nuls
+                w1, w2, nd = s[ai1.name], s[ai2.name], s['draws']
+                p1 = w1 / ng * 100
+                p2 = w2 / ng * 100
+                pd = nd / ng * 100
+
+                # Moyenne de disques finaux (sur 64)
+                avg1 = s['total_discs'][ai1.name] / ng
+                avg2 = s['total_discs'][ai2.name] / ng
+
+                # Différence agrégée
+                diff1 = s['disc_diff'][ai1.name]
+                diff2 = s['disc_diff'][ai2.name]
+
+                print(f"{ai1.name}: {w1} victoires ({p1:.1f}%),  "
+                      f"{ai2.name}: {w2} victoires ({p2:.1f}%),  "
+                      f"Nuls: {nd} ({pd:.1f}%)")
+                print(f"ΔDisques: {ai1.name} {diff1:+d} | {ai2.name} {diff2:+d}")
+                print(f"Moyenne disques finaux: {ai1.name} {avg1:.1f}/64 | {ai2.name} {avg2:.1f}/64\n")
+
+        return self.results
+
+
+if __name__ == '__main__':
+    try:
+        ng = int(input("Nombre de parties par affrontement [défaut 50] : ") or 50)
+    except:
+        ng = 50
+    Tournament().full_tournament(ng)
