@@ -34,7 +34,9 @@ def main_menu():
         elif choix == '5':
             nb = input("Nombre de parties par affrontement (défaut 50) : ").strip()
             nb = int(nb) if nb.isdigit() and int(nb) > 0 else 50
-            Tournament().full_tournament(nb)
+            fichier_resultats = input("Nom du fichier pour enregistrer les résultats (défaut: 'resultats_tournoi.txt') : ").strip()
+            fichier_resultats = fichier_resultats if fichier_resultats else "resultats_tournoi.txt"
+            Tournament().full_tournament(nb, fichier_resultats)
         elif choix == '6':
             print("Au revoir !")
             sys.exit()
